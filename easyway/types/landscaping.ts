@@ -8,7 +8,7 @@ export type LandscapingQuote = {
   last_name: string
   email: string
   phone: string
-  status: string
+  status: 'new' | 'contacted' | 'quoted' | 'won' | 'lost'
   notes: string | null
   created_at: string
   updated_at: string
