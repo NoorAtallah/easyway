@@ -275,16 +275,22 @@ export async function deleteMovingItem(id: string) {
   return { success: true }
 }
 
-export async function uploadMovingItemImage(id: string, file: FormData) {
+export async function uploadMovingItemImage(id: string, fileData: {
+  bytes: number[]
+  name: string
+  type: string
+}) {
   const supabase = createAdminClient()
-  const fileData = file.get('file') as File
-  if (!fileData) return { success: false, error: 'No file provided' }
   const ext = fileData.name.split('.').pop()
   const path = `${id}.${ext}`
+  const buffer = new Uint8Array(fileData.bytes)
+
   const { error: uploadError } = await supabase.storage
     .from('moving-items')
-    .upload(path, fileData, { upsert: true })
+    .upload(path, buffer, { upsert: true, contentType: fileData.type })
+
   if (uploadError) return { success: false, error: uploadError.message }
+
   const { data: { publicUrl } } = supabase.storage.from('moving-items').getPublicUrl(path)
   await admin().from('moving_items').update({ image_url: publicUrl }).eq('id', id)
   return { success: true, url: publicUrl }

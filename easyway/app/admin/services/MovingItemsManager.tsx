@@ -20,15 +20,22 @@ function ImageUpload({ item, onUploaded }: { item: MovingItem; onUploaded: (url:
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    const fd = new FormData()
-    fd.append('file', file)
-    const result = await uploadMovingItemImage(item.id, fd)
-    if (result.success && result.url) onUploaded(result.url)
-    setUploading(false)
-  }
+  const file = e.target.files?.[0]
+  if (!file) return
+  setUploading(true)
+
+  const arrayBuffer = await file.arrayBuffer()
+  const bytes = Array.from(new Uint8Array(arrayBuffer))
+
+  const result = await uploadMovingItemImage(item.id, {
+    bytes,
+    name: file.name,
+    type: file.type,
+  })
+
+  if (result.success && result.url) onUploaded(result.url)
+  setUploading(false)
+}
 
   return (
     <div className="relative group w-[52px] h-[52px] rounded-lg overflow-hidden border border-[#dde3ea] shrink-0 cursor-pointer"
