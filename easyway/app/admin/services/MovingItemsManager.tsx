@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from 'react'
 import { Plus, Pencil, Trash2, Eye, EyeOff, Upload, X, Check, ImageOff, ChevronDown, ChevronRight } from 'lucide-react'
 import { createMovingItem, updateMovingItem, deleteMovingItem, uploadMovingItemImage } from './actions'
-
+import { createClient } from '@/lib/supabase/client'
 type MovingItem = {
   id: string
   section: string
@@ -20,22 +20,34 @@ function ImageUpload({ item, onUploaded }: { item: MovingItem; onUploaded: (url:
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0]
-  if (!file) return
-  setUploading(true)
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
 
-  const arrayBuffer = await file.arrayBuffer()
-  const bytes = Array.from(new Uint8Array(arrayBuffer))
+    const supabase = createClient()
+    const ext = file.name.split('.').pop()
+    const path = `${item.id}.${ext}`
 
-  const result = await uploadMovingItemImage(item.id, {
-    bytes,
-    name: file.name,
-    type: file.type,
-  })
+    const { error } = await supabase.storage
+      .from('moving-items')
+      .upload(path, file, { upsert: true })
 
-  if (result.success && result.url) onUploaded(result.url)
-  setUploading(false)
-}
+    if (error) {
+      console.error(error)
+      setUploading(false)
+      return
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('moving-items')
+      .getPublicUrl(path)
+
+    // persist url to DB via server action (just a small string, no problem)
+    await updateMovingItem(item.id, { image_url: publicUrl })
+    onUploaded(publicUrl)
+    setUploading(false)
+  }
+
 
   return (
     <div className="relative group w-[52px] h-[52px] rounded-lg overflow-hidden border border-[#dde3ea] shrink-0 cursor-pointer"
