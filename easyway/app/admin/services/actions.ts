@@ -266,6 +266,8 @@ export async function updateMovingItem(id: string, data: Partial<{
 }>) {
   const { error } = await admin().from('moving_items').update(data).eq('id', id)
   if (error) return { success: false, error: error.message }
+  revalidatePath('/moving')        // your quote page route
+  revalidatePath('/admin/moving')  // your admin page route
   return { success: true }
 }
 
@@ -293,5 +295,7 @@ export async function uploadMovingItemImage(id: string, fileData: {
 
   const { data: { publicUrl } } = supabase.storage.from('moving-items').getPublicUrl(path)
   await admin().from('moving_items').update({ image_url: publicUrl }).eq('id', id)
+  revalidatePath('/moving')
+  revalidatePath('/admin/moving')
   return { success: true, url: publicUrl }
 }

@@ -39,13 +39,14 @@ function ImageUpload({ item, onUploaded }: { item: MovingItem; onUploaded: (url:
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from('moving-items')
-      .getPublicUrl(path)
+  .from('moving-items')
+  .getPublicUrl(path)
 
-    // persist url to DB via server action (just a small string, no problem)
-    await updateMovingItem(item.id, { image_url: publicUrl })
-    onUploaded(publicUrl)
-    setUploading(false)
+const bustUrl = `${publicUrl}?t=${Date.now()}`
+
+await updateMovingItem(item.id, { image_url: bustUrl })
+onUploaded(bustUrl)
+setUploading(false)
   }
 
 
