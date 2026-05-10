@@ -228,6 +228,15 @@ function FillingDetailPanel({ quote, userRole, onClose }: { quote: PoolFillingQu
             <p className="text-[11px] tracking-[0.12em] uppercase text-[#718096] font-bold mb-2">Pool volume</p>
             <p className="text-sm font-semibold text-[#1a2e35]">{Number(quote.gallons).toLocaleString()} gallons</p>
           </section>
+          {quote.estimated_total && (
+  <section>
+    <p className="text-[11px] tracking-[0.12em] uppercase text-[#718096] font-bold mb-2">Estimated total</p>
+    <p className="text-sm font-semibold text-[#1a2e35]">
+      ${Number(quote.estimated_total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+    </p>
+    <p className="text-xs text-[#9aa5b4] mt-1">Based on state pricing at time of submission</p>
+  </section>
+)}
           <section>
             <p className="text-[11px] tracking-[0.12em] uppercase text-[#718096] font-bold mb-2">Current status</p>
             <span className={`text-[10px] font-bold uppercase tracking-[0.5px] px-2.5 py-[4px] rounded-full border inline-block ${statusColors[quote.status as Status]}`}>{quote.status}</span>
@@ -484,6 +493,7 @@ export default function PoolQuotesTable({
                       <th className="px-4 py-3">Gallons</th>
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Received</th>
+                      <th className="px-4 py-3">Est. Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -503,6 +513,14 @@ export default function PoolQuotesTable({
                         <td className="px-4 py-3"><span className="text-xs font-semibold text-[#4a5568]">{Number(q.gallons).toLocaleString()}</span></td>
                         <td className="px-4 py-3"><StatusDropdown quoteId={q.id} currentStatus={q.status as Status} onChange={s => handleFillingStatus(q.id, s)} onUpdate={updatePoolFillingQuoteStatus} /></td>
                         <td className="px-4 py-3 text-[#718096] text-xs whitespace-nowrap">{formatDate(q.created_at)}</td>
+                        <td className="px-4 py-3">
+  <span className="text-xs font-semibold text-[#1a2e35]">
+    {q.estimated_total
+      ? `$${Number(q.estimated_total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : '—'
+    }
+  </span>
+</td>
                       </tr>
                     ))}
                   </tbody>

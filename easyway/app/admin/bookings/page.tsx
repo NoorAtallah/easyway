@@ -21,8 +21,8 @@ const [
   { data: landscapingQuotes, count: lCount },
   { data: plumbingQuotes,    count: pCount },
   { data: cleaningQuotes,    count: cCount },
-  { data: poolCareQuotes,    count: pcCount },
-  { data: poolFillingQuotes, count: pfCount },
+  { data: rawCareQuotes,     count: pcCount },
+  { data: rawFillingQuotes,  count: pfCount },
   { data: movingQuotes,      count: mCount },
   { data: movingItems },
 ] = await Promise.all([
@@ -34,6 +34,32 @@ const [
   admin.from('moving_quotes').select('*', { count: 'exact' }).order('created_at', { ascending: false }),
   admin.from('moving_items').select('id, name, section, cuft').eq('is_active', true),
 ])
+
+const poolCareQuotes = (rawCareQuotes ?? []).map(q => ({
+  ...q,
+  first_name: q.form_data?.first_name ?? q.first_name ?? null,
+  last_name:  q.form_data?.last_name  ?? q.last_name  ?? null,
+  email:      q.form_data?.email      ?? q.email      ?? null,
+  phone:      q.form_data?.phone      ?? q.phone      ?? null,
+  zip_code:   q.form_data?.zip_code   ?? q.zip_code   ?? null,
+  city:       q.form_data?.city       ?? q.city       ?? null,
+  address:    q.form_data?.address    ?? q.address    ?? null,
+  pool_size:  q.form_data?.pool_size  ?? q.pool_size  ?? null,
+  notes:      q.form_data?.notes      ?? q.notes      ?? null,
+}))
+
+const poolFillingQuotes = (rawFillingQuotes ?? []).map(q => ({
+  ...q,
+  first_name: q.form_data?.first_name ?? q.first_name ?? null,
+  last_name:  q.form_data?.last_name  ?? q.last_name  ?? null,
+  email:      q.form_data?.email      ?? q.email      ?? null,
+  zip_code:   q.form_data?.zip_code   ?? q.zip_code   ?? null,
+  street:     q.form_data?.street     ?? q.street     ?? null,
+  city:       q.form_data?.city       ?? q.city       ?? null,
+  state:      q.form_data?.state      ?? q.state      ?? null,
+  gallons:    q.form_data?.gallons    ?? q.gallons     ?? null,
+  estimated_total: q.estimated_total ?? null,
+}))
 
   const counts = {
     landscaping: lCount ?? 0,
