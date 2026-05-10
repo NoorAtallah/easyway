@@ -1,3 +1,5 @@
+
+export const revalidate = 0
 import { createAdminClient } from '@/lib/supabase/server'
 import PoolPage from './PoolPage'
 
