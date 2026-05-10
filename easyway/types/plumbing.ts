@@ -13,11 +13,13 @@ export type PlumbingQuote = {
   first_name: string
   last_name: string
   email: string
-  phone?: string
-  address?: string
+  phone: string
+  address: string
+  city: string
+  zip_code: string
+  job_description: string
+  status: 'new' | 'contacted' | 'quoted' | 'won' | 'lost'
   created_at: string
-  status?: string
-  [key: string]: unknown
 }
 export type PlumbingField = {
   id: string
