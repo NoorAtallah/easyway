@@ -5,11 +5,13 @@ export type LandscapingQuote = {
   first_name: string
   last_name: string
   email: string
-  phone?: string
-  address?: string
+  phone: string
+  address: string
+  city: string
+  zip_code: string
+  job_size_label: string
+  status: 'new' | 'contacted' | 'quoted' | 'won' | 'lost'
   created_at: string
-  status?: string
-  [key: string]: unknown
 }
 export type LandscapingFieldOption = {
   id: string
