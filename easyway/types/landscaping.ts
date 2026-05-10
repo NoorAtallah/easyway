@@ -1,5 +1,16 @@
 export type LandscapingFieldType = 'text' | 'email' | 'tel' | 'number' | 'textarea' | 'select'
-
+export type LandscapingQuote = {
+  id: string
+  reference_id?: string
+  first_name: string
+  last_name: string
+  email: string
+  phone?: string
+  address?: string
+  created_at: string
+  status?: string
+  [key: string]: unknown
+}
 export type LandscapingFieldOption = {
   id: string
   field_id: string

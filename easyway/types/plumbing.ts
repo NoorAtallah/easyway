@@ -7,7 +7,18 @@ export type PlumbingFieldOption = {
   value: string
   sort_order: number
 }
-
+export type PlumbingQuote = {
+  id: string
+  reference_id?: string
+  first_name: string
+  last_name: string
+  email: string
+  phone?: string
+  address?: string
+  created_at: string
+  status?: string
+  [key: string]: unknown
+}
 export type PlumbingField = {
   id: string
   key: string
