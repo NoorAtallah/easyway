@@ -26,6 +26,7 @@ export type PoolFillingQuote = {
   city: string
   state: string
   gallons: string
+  estimated_total: number | null
   status: string
   created_at: string
   updated_at: string

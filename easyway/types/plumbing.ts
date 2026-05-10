@@ -1,31 +1,26 @@
-export type PlumbingQuoteFormData = {
-  zipCode: string
-  city: string
-  address: string
-  jobDescription: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-}
+export type PlumbingFieldType = 'text' | 'email' | 'tel' | 'number' | 'textarea' | 'select'
 
-export type PlumbingQuote = {
+export type PlumbingFieldOption = {
   id: string
-  zip_code: string
-  city: string
-  address: string
-  job_description: string
-  first_name: string
-  last_name: string
-  email: string
-  phone: string
-  status: string
-  notes: string | null
-  created_at: string
-  updated_at: string
-  reference_id: string | null
+  field_id: string
+  label: string
+  value: string
+  sort_order: number
 }
 
-export type SubmitPlumbingQuoteResult =
-  | { success: true; quoteId: string }
-  | { success: false; error: string }
+export type PlumbingField = {
+  id: string
+  key: string
+  label: string
+  placeholder: string
+  help_text: string
+  type: PlumbingFieldType
+  icon: string
+  required: boolean
+  sort_order: number
+  is_active: boolean
+  plumbing_field_options: PlumbingFieldOption[]
+}
+
+// kept for backwards compat with the old static form (no longer used)
+export type PlumbingQuoteFormData = Record<string, string>

@@ -1,37 +1,23 @@
-export type LandscapingQuote = {
-  id: string
-  zip_code: string
-  city: string
-  address: string
-  job_size_label: string
-  first_name: string
-  last_name: string
-  email: string
-  phone: string
-  status: 'new' | 'contacted' | 'quoted' | 'won' | 'lost'
-  notes: string | null
-  created_at: string
-  updated_at: string
-  reference_id: string | null
-}
+export type LandscapingFieldType = 'text' | 'email' | 'tel' | 'number' | 'textarea' | 'select'
 
-export type JobSize = {
+export type LandscapingFieldOption = {
   id: string
+  field_id: string
   label: string
-  description: string
+  value: string
+  sort_order: number
 }
 
-export type QuoteFormData = {
-  zipCode: string
-  city: string
-  address: string
-  jobSizeId: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
+export type LandscapingField = {
+  id: string
+  key: string
+  label: string
+  placeholder: string
+  help_text: string
+  type: LandscapingFieldType
+  icon: string
+  required: boolean
+  sort_order: number
+  is_active: boolean
+  landscaping_field_options: LandscapingFieldOption[]
 }
-
-export type SubmitQuoteResult =
-  | { success: true; quoteId: string }
-  | { success: false; error: string }

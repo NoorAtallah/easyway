@@ -1,75 +1,74 @@
-"use server";
+"use server"
 
-import { createAdminClient } from "@/lib/supabase/server";
-import type { QuoteFormData, SubmitQuoteResult } from "@/types/landscaping";
+import { createAdminClient } from "@/lib/supabase/server"
+import type { LandscapingField } from "@/types/landscaping"
 
-export async function submitLandscapingQuote(
-  data: QuoteFormData
-): Promise<SubmitQuoteResult> {
-  // Server-side validation
-  const required = [
-    data.zipCode, data.city, data.address, data.jobSizeId,
-    data.firstName, data.lastName, data.email, data.phone,
-  ];
-  if (required.some((v) => !v?.trim())) {
-    return { success: false, error: "All fields are required." };
-  }
+type SubmitInput = { answers: Record<string, string> }
+type SubmitResult = { success: true; quoteId: string } | { success: false; error: string }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(data.email)) {
-    return { success: false, error: "Please enter a valid email." };
-  }
+export async function submitLandscapingQuote(input: SubmitInput): Promise<SubmitResult> {
+  const supabase = createAdminClient()
+  const a = input.answers ?? {}
 
-  const supabase = createAdminClient();
-
-  // Look up job size (to snapshot the label and confirm it's valid/active)
-  const { data: jobSize, error: jobSizeError } = await supabase
-    .from("job_sizes")
-    .select("id, label")
-    .eq("id", data.jobSizeId)
+  // Fetch active fields to validate against
+  const { data: activeFields, error: fieldsError } = await supabase
+    .from("landscaping_fields")
+    .select("key, label, required, type, is_active")
     .eq("is_active", true)
-    .single();
 
-  if (jobSizeError || !jobSize) {
-    return { success: false, error: "Invalid job size selected." };
+  if (fieldsError) {
+    console.error("Failed to fetch fields for validation:", fieldsError)
+    return { success: false, error: "Something went wrong. Please try again." }
   }
 
-  // Insert quote
+  // Validate required fields
+  for (const f of activeFields ?? []) {
+    if (f.required && !a[f.key]?.trim()) {
+      return { success: false, error: `Please fill in "${f.label}"` }
+    }
+  }
+
+  // Validate email format if present
+  if (a.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email)) {
+    return { success: false, error: "Please enter a valid email." }
+  }
+
+  // Build insert payload — mirror well-known keys into legacy columns
   const { data: inserted, error } = await supabase
     .from("landscaping_quotes")
     .insert({
-      zip_code: data.zipCode.trim(),
-      city: data.city.trim(),
-      address: data.address.trim(),
-      job_size_id: jobSize.id,
-      job_size_label: jobSize.label,
-      first_name: data.firstName.trim(),
-      last_name: data.lastName.trim(),
-      email: data.email.trim().toLowerCase(),
-      phone: data.phone.trim(),
+      zip_code:       a.zipCode   ?? "",
+      city:           a.city      ?? "",
+      address:        a.address   ?? "",
+      job_size_label: a.jobSize   ?? "",
+      first_name:     a.firstName ?? "",
+      last_name:      a.lastName  ?? "",
+      email:          (a.email    ?? "").toLowerCase().trim(),
+      phone:          a.phone     ?? "",
+      answers:        a,
     })
     .select("id")
-    .single();
+    .single()
 
   if (error) {
-    console.error("Quote submission failed:", error);
-    return { success: false, error: "Something went wrong. Please try again." };
+    console.error("Quote submission failed:", error)
+    return { success: false, error: "Something went wrong. Please try again." }
   }
 
-  return { success: true, quoteId: inserted.id };
+  return { success: true, quoteId: inserted.id }
 }
 
-export async function getActiveJobSizes() {
-  const supabase = createAdminClient();
+export async function getActiveLandscapingFields(): Promise<LandscapingField[]> {
+  const supabase = createAdminClient()
   const { data, error } = await supabase
-    .from("job_sizes")
-    .select("id, label, description")
+    .from("landscaping_fields")
+    .select("*, landscaping_field_options(*)")
     .eq("is_active", true)
-    .order("sort_order", { ascending: true });
+    .order("sort_order", { ascending: true })
 
   if (error) {
-    console.error("Failed to fetch job sizes:", error);
-    return [];
+    console.error("Failed to fetch landscaping fields:", error)
+    return []
   }
-  return data;
+  return (data ?? []) as LandscapingField[]
 }

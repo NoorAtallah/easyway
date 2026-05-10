@@ -1,84 +1,48 @@
-"use client";
+"use client"
 
-import { useState, useTransition } from "react";
+import { useState, useTransition } from "react"
+import * as Icons from "lucide-react"
 import {
-  ArrowRight, MapPin, Building2, Home, Maximize2, User, Mail, Phone,
-  CheckCircle, ShieldCheck, Star, Clock,
-} from "lucide-react";
-import { submitLandscapingQuote } from "./actions";
-import type { JobSize } from "@/types/landscaping";
+  ArrowRight, CheckCircle, ShieldCheck, Star, Clock,
+} from "lucide-react"
+import { submitLandscapingQuote } from "./actions"
+import type { LandscapingField } from "@/types/landscaping"
 
-function Field({
-  icon, label, name, value, onChange, placeholder = "", type = "text",
-}: {
-  icon: React.ReactNode;
-  label: string;
-  name: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-  type?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label
-        className="text-[11px] tracking-[0.12em] uppercase font-bold"
-        style={{ color: "rgba(51,63,54,0.6)" }}
-      >
-        {label}
-      </label>
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none flex" style={{ color: "#9aa5b4" }}>
-          {icon}
-        </span>
-        <input
-          type={type}
-          name={name}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          className="w-full py-[11px] pr-3 pl-9 rounded text-sm font-['DM_Sans',sans-serif] outline-none box-border transition-colors duration-150"
-          style={{
-            background: "#fafbfc",
-            border: "1.5px solid rgba(51,63,54,0.15)",
-            color: "var(--ew-forest)",
-          }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--ew-sky)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(51,63,54,0.15)")}
-        />
-      </div>
-    </div>
-  );
+function getIcon(name: string, size = 15) {
+  const Icon = (Icons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[name]
+  return Icon ? <Icon size={size} /> : <Icons.FileText size={size} />
 }
 
-export default function LandscapingForm({ jobSizes }: { jobSizes: JobSize[] }) {
-  const [form, setForm] = useState({
-    zipCode: "", city: "", address: "",
-    jobSizeId: "",
-    firstName: "", lastName: "",
-    email: "", phone: "",
-  });
-  const [submitted, setSubmitted] = useState(false);
-  const [jobSizeOpen, setJobSizeOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+export default function LandscapingForm({ fields }: { fields: LandscapingField[] }) {
+  const [answers, setAnswers] = useState<Record<string, string>>(
+    Object.fromEntries(fields.map(f => [f.key, ""]))
+  )
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({})
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
-  const selectedJobSize = jobSizes.find((s) => s.id === form.jobSizeId);
+  const handleChange = (key: string, value: string) =>
+    setAnswers(prev => ({ ...prev, [key]: value }))
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const toggleDropdown = (key: string) =>
+    setOpenDropdowns(prev => ({ ...prev, [key]: !prev[key] }))
 
   const handleSubmit = () => {
-    setError(null);
+    setError(null)
+    const missing = fields.find(f => f.required && !answers[f.key]?.trim())
+    if (missing) {
+      setError(`Please fill in "${missing.label}"`)
+      return
+    }
     startTransition(async () => {
-      const result = await submitLandscapingQuote(form);
-      if (result.success) {
-        setSubmitted(true);
-      } else {
-        setError(result.error);
-      }
-    });
-  };
+      const result = await submitLandscapingQuote({ answers })
+      if (result.success) setSubmitted(true)
+      else setError(result.error)
+    })
+  }
+
+  const submittedEmail = answers.email
 
   return (
     <main
@@ -88,11 +52,11 @@ export default function LandscapingForm({ jobSizes }: { jobSizes: JobSize[] }) {
       {/* Hero banner */}
       <div
         className="px-4 sm:px-8 lg:px-[52px] pt-14 pb-12"
-        style={{
-          background: "var(--ew-forest)",
-          borderBottom: "3px solid var(--ew-sky)",
-        }}
+        style={{ background: "var(--ew-forest)", borderBottom: "3px solid var(--ew-sky)" }}
       >
+        <div className="mb-6">
+          <img src="/13.png" alt="Landscaping services logo" className="h-10 w-auto" />
+        </div>
         <p
           className="text-[11px] tracking-[0.2em] uppercase font-semibold mb-3.5"
           style={{ color: "var(--ew-leaf)" }}
@@ -104,9 +68,7 @@ export default function LandscapingForm({ jobSizes }: { jobSizes: JobSize[] }) {
           style={{ color: "#ffffff" }}
         >
           Your Yard,{" "}
-          <em className="italic" style={{ color: "var(--ew-sky)" }}>
-            Reimagined.
-          </em>
+          <em className="italic" style={{ color: "var(--ew-sky)" }}>Reimagined.</em>
         </h1>
         <p
           className="mt-4 text-[15px] max-w-[480px] leading-[1.7]"
@@ -165,14 +127,15 @@ export default function LandscapingForm({ jobSizes }: { jobSizes: JobSize[] }) {
                 Request received!
               </h2>
               <p className="text-sm max-w-[380px] leading-[1.7]" style={{ color: "rgba(51,63,54,0.6)" }}>
-                We'll review your job details and send a quote with small, medium,
-                and large options to{" "}
-                <strong style={{ color: "var(--ew-forest)" }}>{form.email}</strong>.
+                We'll review your job details and send a quote
+                {submittedEmail && (
+                  <> to <strong style={{ color: "var(--ew-forest)" }}>{submittedEmail}</strong></>
+                )} shortly.
               </p>
               <button
                 onClick={() => {
-                  setSubmitted(false);
-                  setForm({ zipCode: "", city: "", address: "", jobSizeId: "", firstName: "", lastName: "", email: "", phone: "" });
+                  setSubmitted(false)
+                  setAnswers(Object.fromEntries(fields.map(f => [f.key, ""])))
                 }}
                 className="px-6 py-2.5 rounded text-[13px] cursor-pointer font-['DM_Sans',sans-serif] transition-colors duration-200"
                 style={{
@@ -187,106 +150,189 @@ export default function LandscapingForm({ jobSizes }: { jobSizes: JobSize[] }) {
           ) : (
             <div className="p-5 sm:p-7">
               <div className="flex flex-col gap-4">
+                {fields.length === 0 && (
+                  <p className="text-sm text-center py-8" style={{ color: "#9aa5b4" }}>
+                    No form fields are configured yet.
+                  </p>
+                )}
 
-                <Field icon={<MapPin size={15} />} label="Job zip code"
-                  name="zipCode" value={form.zipCode} onChange={handleChange} placeholder="e.g. 60601" />
+                {fields.map(field => {
+                  const value = answers[field.key] ?? ""
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <Field icon={<Building2 size={15} />} label="City"
-                    name="city" value={form.city} onChange={handleChange} placeholder="Chicago" />
-                  <Field icon={<Home size={15} />} label="Address"
-                    name="address" value={form.address} onChange={handleChange} placeholder="123 Main St" />
-                </div>
+                  // ── Select / dropdown ──
+                  if (field.type === "select") {
+                    const isOpen = !!openDropdowns[field.key]
+                    const options = (field.landscaping_field_options ?? [])
+                      .slice()
+                      .sort((a, b) => a.sort_order - b.sort_order)
+                    const selected = options.find(o => o.value === value)
 
-                {/* Job size dropdown */}
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    className="text-[11px] tracking-[0.12em] uppercase font-bold"
-                    style={{ color: "rgba(51,63,54,0.6)" }}
-                  >
-                    Job size
-                  </label>
-                  <div className="relative">
-                    <Maximize2
-                      size={15}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-[1]"
-                      style={{ color: "#9aa5b4" }}
-                    />
-                    <div
-                      onClick={() => setJobSizeOpen(!jobSizeOpen)}
-                      className={`px-9 py-[11px] cursor-pointer select-none transition-colors duration-150 flex items-center text-sm ${jobSizeOpen ? "rounded-t" : "rounded"}`}
-                      style={{
-                        background: "#fafbfc",
-                        border: `1.5px solid ${jobSizeOpen ? "var(--ew-sky)" : "rgba(51,63,54,0.15)"}`,
-                        color: selectedJobSize ? "var(--ew-forest)" : "#9aa5b4",
-                      }}
-                    >
-                      {selectedJobSize
-                        ? `${selectedJobSize.label} — ${selectedJobSize.description}`
-                        : "Select size"}
-                    </div>
-                    <svg
-                      width="12" height="12" viewBox="0 0 12 12"
-                      className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-200 ${jobSizeOpen ? "rotate-180" : "rotate-0"}`}
-                      fill="none" stroke="#9aa5b4" strokeWidth="1.5"
-                    >
-                      <path d="M2 4l4 4 4-4" />
-                    </svg>
-                    {jobSizeOpen && (
-                      <div
-                        className="absolute top-full left-0 right-0 rounded-b z-50 overflow-hidden"
-                        style={{
-                          background: "var(--ew-bg)",
-                          border: "1.5px solid var(--ew-sky)",
-                          borderTop: "none",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                        }}
-                      >
-                        {jobSizes.map(({ id, label, description }) => (
+                    return (
+                      <div key={field.id} className="flex flex-col gap-1.5">
+                        <label
+                          className="text-[11px] tracking-[0.12em] uppercase font-bold"
+                          style={{ color: "rgba(51,63,54,0.6)" }}
+                        >
+                          {field.label}{field.required && " *"}
+                        </label>
+                        <div className="relative">
+                          <span
+                            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-[1] flex"
+                            style={{ color: "#9aa5b4" }}
+                          >
+                            {getIcon(field.icon)}
+                          </span>
                           <div
-                            key={id}
-                            onClick={() => { setForm({ ...form, jobSizeId: id }); setJobSizeOpen(false); }}
-                            className="px-4 py-3 flex items-baseline gap-2.5 text-sm cursor-pointer transition-colors duration-100"
+                            onClick={() => toggleDropdown(field.key)}
+                            className={`px-9 py-[11px] cursor-pointer select-none transition-colors duration-150 flex items-center text-sm ${isOpen ? "rounded-t" : "rounded"}`}
                             style={{
-                              color: form.jobSizeId === id ? "var(--ew-forest)" : "rgba(51,63,54,0.8)",
-                              fontWeight: form.jobSizeId === id ? 600 : 400,
-                              background: form.jobSizeId === id ? "rgba(75,118,22,0.08)" : "transparent",
-                            }}
-                            onMouseEnter={(e) => {
-                              if (form.jobSizeId !== id)
-                                (e.currentTarget as HTMLElement).style.background = "rgba(27,110,180,0.05)";
-                            }}
-                            onMouseLeave={(e) => {
-                              if (form.jobSizeId !== id)
-                                (e.currentTarget as HTMLElement).style.background = "transparent";
+                              background: "#fafbfc",
+                              border: `1.5px solid ${isOpen ? "var(--ew-sky)" : "rgba(51,63,54,0.15)"}`,
+                              color: selected ? "var(--ew-forest)" : "#9aa5b4",
                             }}
                           >
-                            {label}
-                            <span className="text-xs font-normal" style={{ color: "#9aa5b4" }}>
-                              {description}
-                            </span>
+                            {selected ? selected.label : (field.placeholder || "Select…")}
                           </div>
-                        ))}
+                          <svg
+                            width="12" height="12" viewBox="0 0 12 12"
+                            className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"}`}
+                            fill="none" stroke="#9aa5b4" strokeWidth="1.5"
+                          >
+                            <path d="M2 4l4 4 4-4" />
+                          </svg>
+                          {isOpen && (
+                            <div
+                              className="absolute top-full left-0 right-0 rounded-b z-50 overflow-hidden"
+                              style={{
+                                background: "var(--ew-bg)",
+                                border: "1.5px solid var(--ew-sky)",
+                                borderTop: "none",
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                              }}
+                            >
+                              {options.length === 0 ? (
+                                <div className="px-4 py-3 text-sm italic" style={{ color: "#9aa5b4" }}>
+                                  No options available
+                                </div>
+                              ) : (
+                                options.map(opt => (
+                                  <div
+                                    key={opt.id}
+                                    onClick={() => {
+                                      handleChange(field.key, opt.value)
+                                      toggleDropdown(field.key)
+                                    }}
+                                    className="px-4 py-3 flex items-baseline gap-2.5 text-sm cursor-pointer transition-colors duration-100"
+                                    style={{
+                                      color: value === opt.value ? "var(--ew-forest)" : "rgba(51,63,54,0.8)",
+                                      fontWeight: value === opt.value ? 600 : 400,
+                                      background: value === opt.value ? "rgba(75,118,22,0.08)" : "transparent",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (value !== opt.value)
+                                        (e.currentTarget as HTMLElement).style.background = "rgba(27,110,180,0.05)"
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (value !== opt.value)
+                                        (e.currentTarget as HTMLElement).style.background = "transparent"
+                                    }}
+                                  >
+                                    {opt.label}
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {field.help_text && (
+                          <p className="text-xs m-0 leading-[1.5]" style={{ color: "#9aa5b4" }}>
+                            {field.help_text}
+                          </p>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <p className="text-xs m-0 leading-[1.5]" style={{ color: "#9aa5b4" }}>
-                    Not sure? We'll provide options for small, medium, and large.
-                  </p>
-                </div>
+                    )
+                  }
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <Field icon={<User size={15} />} label="First name"
-                    name="firstName" value={form.firstName} onChange={handleChange} placeholder="Jane" />
-                  <Field icon={<User size={15} />} label="Last name"
-                    name="lastName" value={form.lastName} onChange={handleChange} placeholder="Smith" />
-                </div>
+                  // ── Textarea ──
+                  if (field.type === "textarea") {
+                    return (
+                      <div key={field.id} className="flex flex-col gap-1.5">
+                        <label
+                          className="text-[11px] tracking-[0.12em] uppercase font-bold"
+                          style={{ color: "rgba(51,63,54,0.6)" }}
+                        >
+                          {field.label}{field.required && " *"}
+                        </label>
+                        <div className="relative">
+                          <span
+                            className="absolute left-3 top-[13px] pointer-events-none flex"
+                            style={{ color: "#9aa5b4" }}
+                          >
+                            {getIcon(field.icon)}
+                          </span>
+                          <textarea
+                            value={value}
+                            onChange={e => handleChange(field.key, e.target.value)}
+                            placeholder={field.placeholder}
+                            rows={4}
+                            className="w-full py-[11px] pr-3 pl-9 rounded text-sm font-['DM_Sans',sans-serif] outline-none box-border resize-y leading-[1.6] transition-colors duration-150"
+                            style={{
+                              background: "#fafbfc",
+                              border: "1.5px solid rgba(51,63,54,0.15)",
+                              color: "var(--ew-forest)",
+                            }}
+                            onFocus={e => (e.currentTarget.style.borderColor = "var(--ew-sky)")}
+                            onBlur={e => (e.currentTarget.style.borderColor = "rgba(51,63,54,0.15)")}
+                          />
+                        </div>
+                        {field.help_text && (
+                          <p className="text-xs m-0 leading-[1.5]" style={{ color: "#9aa5b4" }}>
+                            {field.help_text}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  }
 
-                <Field icon={<Mail size={15} />} label="Email" name="email" type="email"
-                  value={form.email} onChange={handleChange} placeholder="you@example.com" />
-
-                <Field icon={<Phone size={15} />} label="Phone number" name="phone" type="tel"
-                  value={form.phone} onChange={handleChange} placeholder="(773) 000-0000" />
+                  // ── Default: text / email / tel / number ──
+                  return (
+                    <div key={field.id} className="flex flex-col gap-1.5">
+                      <label
+                        className="text-[11px] tracking-[0.12em] uppercase font-bold"
+                        style={{ color: "rgba(51,63,54,0.6)" }}
+                      >
+                        {field.label}{field.required && " *"}
+                      </label>
+                      <div className="relative">
+                        <span
+                          className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none flex"
+                          style={{ color: "#9aa5b4" }}
+                        >
+                          {getIcon(field.icon)}
+                        </span>
+                        <input
+                          type={field.type}
+                          value={value}
+                          onChange={e => handleChange(field.key, e.target.value)}
+                          placeholder={field.placeholder}
+                          className="w-full py-[11px] pr-3 pl-9 rounded text-sm font-['DM_Sans',sans-serif] outline-none box-border transition-colors duration-150"
+                          style={{
+                            background: "#fafbfc",
+                            border: "1.5px solid rgba(51,63,54,0.15)",
+                            color: "var(--ew-forest)",
+                          }}
+                          onFocus={e => (e.currentTarget.style.borderColor = "var(--ew-sky)")}
+                          onBlur={e => (e.currentTarget.style.borderColor = "rgba(51,63,54,0.15)")}
+                        />
+                      </div>
+                      {field.help_text && (
+                        <p className="text-xs m-0 leading-[1.5]" style={{ color: "#9aa5b4" }}>
+                          {field.help_text}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
 
                 <hr className="border-none h-px my-1" style={{ background: "rgba(51,63,54,0.08)" }} />
 
@@ -298,14 +344,14 @@ export default function LandscapingForm({ jobSizes }: { jobSizes: JobSize[] }) {
 
                 <button
                   onClick={handleSubmit}
-                  disabled={isPending}
+                  disabled={isPending || fields.length === 0}
                   className="flex items-center justify-center gap-2 py-[15px] px-8 rounded text-[15px] font-extrabold tracking-[0.03em] font-['DM_Sans',sans-serif] cursor-pointer w-full border-none transition-opacity duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{ background: "var(--ew-forest)", color: "#ffffff" }}
-                  onMouseEnter={(e) => {
-                    if (!isPending) (e.currentTarget as HTMLElement).style.background = "var(--ew-sky)";
+                  onMouseEnter={e => {
+                    if (!isPending) (e.currentTarget as HTMLElement).style.background = "var(--ew-sky)"
                   }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = "var(--ew-forest)";
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--ew-forest)"
                   }}
                 >
                   {isPending ? "Sending..." : <>Get My Free Quote <ArrowRight size={15} /></>}
@@ -344,5 +390,5 @@ export default function LandscapingForm({ jobSizes }: { jobSizes: JobSize[] }) {
         </div>
       </div>
     </main>
-  );
+  )
 }

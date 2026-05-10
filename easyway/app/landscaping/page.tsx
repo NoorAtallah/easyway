@@ -1,7 +1,7 @@
-import { getActiveJobSizes } from "./actions";
-import LandscapingForm from "./LandscapingForm";
+import LandscapingForm from "./LandscapingForm"
+import { getActiveLandscapingFields } from "./actions"
 
 export default async function LandscapingPage() {
-  const jobSizes = await getActiveJobSizes();
-  return <LandscapingForm jobSizes={jobSizes} />;
+  const fields = await getActiveLandscapingFields()
+  return <LandscapingForm fields={fields} />
 }

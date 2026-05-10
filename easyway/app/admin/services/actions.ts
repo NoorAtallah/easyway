@@ -2,6 +2,8 @@
 
 import { createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import type { PlumbingField } from '@/types/plumbing'
+import type { LandscapingField } from '@/types/landscaping'
 
 const admin = () => createAdminClient()
 
@@ -298,4 +300,34 @@ export async function uploadMovingItemImage(id: string, fileData: {
   revalidatePath('/moving')
   revalidatePath('/admin/moving')
   return { success: true, url: publicUrl }
+}
+
+
+export async function getPlumbingFields(): Promise<PlumbingField[]> {
+  const supabase = await createAdminClient()
+  const { data, error } = await supabase
+    .from('plumbing_fields')
+    .select('*, plumbing_field_options(*)')
+    .order('sort_order')
+
+  if (error) {
+    console.error('Failed to fetch plumbing fields:', error)
+    return []
+  }
+  return (data ?? []) as PlumbingField[]
+}
+
+
+export async function getLandscapingFields(): Promise<LandscapingField[]> {
+  const supabase = await createAdminClient()
+  const { data, error } = await supabase
+    .from('landscaping_fields')
+    .select('*, landscaping_field_options(*)')
+    .order('sort_order')
+
+  if (error) {
+    console.error('Failed to fetch landscaping fields:', error)
+    return []
+  }
+  return (data ?? []) as LandscapingField[]
 }

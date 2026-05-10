@@ -339,6 +339,10 @@ export default function MovingQuotePage({ items, pricingRanges }: { items: Movin
             We've received your moving request and will be in touch at{" "}
             <strong style={{ color: "var(--ew-forest)" }}>{form.email}</strong> with a personalised quote.
           </p>
+
+           <p className="text-sm max-w-[360px] leading-[1.7]" style={{ color: "rgba(51,63,54,0.6)" }}>
+           Minimum moving quote is 300 cft or 500 miles. If your request falls below these thresholds, we'll still get back to you with a quote, but please allow extra time for us to review the details.
+          </p>
           <button
             onClick={handleReset}
             className="px-6 py-2.5 rounded text-[13px] cursor-pointer font-['DM_Sans',sans-serif]"
@@ -365,6 +369,13 @@ export default function MovingQuotePage({ items, pricingRanges }: { items: Movin
         className="px-4 sm:px-8 lg:px-[52px] pt-14 pb-12"
         style={{ background: "var(--ew-forest)", borderBottom: "3px solid var(--ew-sky)" }}
       >
+        <div className="mb-6">
+          <img
+            src="/11.png"
+            alt="Plumbing services logo"
+            className="h-10 w-auto"
+          />
+        </div>
         <p className="text-[11px] tracking-[0.2em] uppercase font-semibold mb-3.5" style={{ color: "var(--ew-leaf)" }}>
           Moving Services
         </p>

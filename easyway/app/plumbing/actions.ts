@@ -1,45 +1,28 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/server'
-import type { PlumbingQuoteFormData, SubmitPlumbingQuoteResult } from '@/types/plumbing'
 
-export async function submitPlumbingQuote(
-  data: PlumbingQuoteFormData
-): Promise<SubmitPlumbingQuoteResult> {
-  const required = [
-    data.zipCode, data.city, data.address, data.jobDescription,
-    data.firstName, data.lastName, data.email, data.phone,
-  ]
-  if (required.some(v => !v?.trim())) {
-    return { success: false, error: 'All fields are required.' }
-  }
+type SubmitInput = { answers: Record<string, string> }
+type Result = { success: true } | { success: false; error: string }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(data.email)) {
-    return { success: false, error: 'Please enter a valid email.' }
-  }
+export async function submitPlumbingQuote(input: SubmitInput): Promise<Result> {
+  const supabase = await createAdminClient()
+  const a = input.answers
 
-  const supabase = createAdminClient()
+  // Mirror common keys into legacy columns if they're present
+  const { error } = await supabase.from('plumbing_quotes').insert({
+    zip_code:        a.zipCode        ?? '',
+    city:            a.city           ?? '',
+    address:         a.address        ?? '',
+    job_description: a.jobDescription ?? '',
+    first_name:      a.firstName      ?? '',
+    last_name:       a.lastName       ?? '',
+    email:           a.email          ?? '',
+    phone:           a.phone          ?? '',
+    answers:         a,
+    reference_id:    `PLB-${Date.now().toString(36).toUpperCase()}`,
+  })
 
-  const { data: inserted, error } = await supabase
-    .from('plumbing_quotes')
-    .insert({
-      zip_code: data.zipCode.trim(),
-      city: data.city.trim(),
-      address: data.address.trim(),
-      job_description: data.jobDescription.trim(),
-      first_name: data.firstName.trim(),
-      last_name: data.lastName.trim(),
-      email: data.email.trim().toLowerCase(),
-      phone: data.phone.trim(),
-    })
-    .select('id')
-    .single()
-
-  if (error) {
-    console.error('Plumbing quote submission failed:', error)
-    return { success: false, error: 'Something went wrong. Please try again.' }
-  }
-
-  return { success: true, quoteId: inserted.id }
+  if (error) return { success: false, error: error.message }
+  return { success: true }
 }
