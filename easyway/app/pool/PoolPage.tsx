@@ -559,7 +559,7 @@ function WaterFillForm({ fields, pricingMap, onBack }: {
     }
     setLoading(true)
     setError(null)
-    const result = await submitPoolFillingQuote({ ...formValues, estimatedTotal: estimatedTotal?.toString() ?? '' })
+    const result = await submitPoolFillingQuote(formValues, estimatedTotal ?? null)
     setLoading(false)
     if (result.success) setSubmitted(true)
     else setError(result.error ?? 'Something went wrong.')

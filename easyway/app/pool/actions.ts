@@ -12,9 +12,8 @@ export async function submitPoolCareQuote(data: Record<string, string>) {
   return { success: true }
 }
 
-export async function submitPoolFillingQuote(data: Record<string, string> & { estimatedTotal: number | null }) {
+export async function submitPoolFillingQuote(formData: Record<string, string>, estimatedTotal: number | null) {
   const admin = createAdminClient()
-  const { estimatedTotal, ...formData } = data
   const { error } = await admin.from('pool_filling_quotes').insert({
     form_data: formData,
     email: formData['email'] ?? null,
