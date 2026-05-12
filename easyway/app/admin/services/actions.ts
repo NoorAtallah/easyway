@@ -207,6 +207,7 @@ export async function updateItem(id: string, data: {
   description?: string
   price?: number
   is_active?: boolean
+  sort_order?: number
 }) {
   const { error } = await admin()
     .from('cleaning_step_items')

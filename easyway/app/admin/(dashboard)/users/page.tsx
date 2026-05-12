@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { createUser } from '@/app/admin/actions/createUser'
+import { createUser, updateUser } from '@/app/admin/actions/createUser'
 
 type Role = 'admin' | 'manager' | 'staff'
 
@@ -44,34 +44,16 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     const { data: { user: me } } = await supabase.auth.getUser()
-
     const { data } = await supabase
       .from('profiles')
       .select('*')
       .neq('id', me?.id ?? '')
       .order('created_at', { ascending: false })
-
     if (data) setUsers(data)
     setLoading(false)
   }
 
   useEffect(() => { fetchUsers() }, [])
-
-  const toggleActive = async (user: UserProfile) => {
-    await supabase
-      .from('profiles')
-      .update({ is_active: !user.is_active })
-      .eq('id', user.id)
-    setUsers(prev => prev.map(u =>
-      u.id === user.id ? { ...u, is_active: !u.is_active } : u
-    ))
-  }
-
-  const updateRole = async (userId: string, role: Role) => {
-    await supabase.from('profiles').update({ role }).eq('id', userId)
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
-    setEditUser(null)
-  }
 
   const filtered = users.filter(u => {
     const matchSearch = !search ||
@@ -130,8 +112,6 @@ export default function UsersPage() {
 
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-[0_1px_8px_rgba(26,46,53,0.06)] overflow-hidden border border-[#f0f0f0]">
-
-        {/* Table header — hidden on mobile */}
         <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_120px] px-5 py-3 bg-[#f8fafc] border-b border-[#f0f0f0] text-[11px] font-semibold text-[#6b7280] uppercase tracking-[0.5px]">
           <div>User</div>
           <div>Role</div>
@@ -174,19 +154,14 @@ export default function UsersPage() {
               </span>
             </div>
 
-            {/* Status toggle */}
+            {/* Status */}
             <div>
-              <button
-                onClick={() => toggleActive(user)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border-none text-xs font-semibold cursor-pointer font-['DM_Sans',sans-serif] transition-colors duration-150
-                  ${user.is_active
-                    ? 'bg-[#dcfce7] text-[#166534] hover:bg-[#bbf7d0]'
-                    : 'bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]'
-                  }`}
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
+                ${user.is_active ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#fee2e2] text-[#991b1b]'}`}
               >
                 <div className={`w-1.5 h-1.5 rounded-full ${user.is_active ? 'bg-[#16a34a]' : 'bg-[#dc2626]'}`} />
                 {user.is_active ? 'Active' : 'Inactive'}
-              </button>
+              </span>
             </div>
 
             {/* Last login */}
@@ -208,43 +183,19 @@ export default function UsersPage() {
         ))}
       </div>
 
-      {/* Edit Role Modal */}
+      {/* Edit Modal */}
       {editUser && (
-        <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] px-4"
-          onClick={() => setEditUser(null)}
-        >
-          <div
-            className="bg-white rounded-2xl p-8 w-full max-w-[380px] shadow-[0_20px_60px_rgba(0,0,0,0.2)]"
-            onClick={e => e.stopPropagation()}
-          >
-            <h2 className="font-['Playfair_Display',serif] text-lg font-bold text-[#1a2e35] m-0 mb-1">
-              Edit User
-            </h2>
-            <p className="text-[#6b7280] text-[13px] m-0 mb-6">{editUser.email}</p>
-
-            <label className="block text-[13px] font-semibold text-[#374151] mb-2">Role</label>
-            <select
-              defaultValue={editUser.role}
-              onChange={e => updateRole(editUser.id, e.target.value as Role)}
-              className="w-full px-3.5 py-[11px] border-[1.5px] border-[#e5e7eb] rounded-[10px] text-sm text-[#1a2e35] outline-none font-['DM_Sans',sans-serif] bg-white box-border cursor-pointer focus:border-[#8cc7c4]"
-            >
-              <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="staff">Staff</option>
-            </select>
-
-            <button
-              onClick={() => setEditUser(null)}
-              className="mt-5 w-full py-[11px] bg-[#f4f6f8] border-none rounded-[10px] text-sm font-semibold text-[#1a2e35] cursor-pointer font-['DM_Sans',sans-serif] hover:bg-[#e9ecef] transition-colors duration-150"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+        <EditUserModal
+          user={editUser}
+          onClose={() => setEditUser(null)}
+          onSaved={(updated) => {
+            setUsers(prev => prev.map(u => u.id === updated.id ? updated : u))
+            setEditUser(null)
+          }}
+        />
       )}
 
-      {/* Add User Modal */}
+      {/* Add Modal */}
       {showAddModal && (
         <AddUserModal onClose={() => setShowAddModal(false)} onAdded={fetchUsers} />
       )}
@@ -252,6 +203,171 @@ export default function UsersPage() {
   )
 }
 
+// ── Edit User Modal ───────────────────────────────────────────
+function EditUserModal({
+  user,
+  onClose,
+  onSaved,
+}: {
+  user: UserProfile
+  onClose: () => void
+  onSaved: (updated: UserProfile) => void
+}) {
+  const [email, setEmail] = useState(user.email)
+  const [password, setPassword] = useState('')
+  const [role, setRole] = useState<Role>(user.role)
+  const [isActive, setIsActive] = useState(user.is_active)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const handleSave = async () => {
+    setLoading(true)
+    setError('')
+    setSuccess('')
+
+    const result = await updateUser({
+      userId: user.id,
+      email: email !== user.email ? email : undefined,
+      password: password || undefined,
+      role,
+      isActive,
+    })
+
+    setLoading(false)
+
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+
+    setSuccess('Saved successfully!')
+    setTimeout(() => {
+      onSaved({ ...user, email, role, is_active: isActive })
+    }, 800)
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] px-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl p-8 w-full max-w-[420px] shadow-[0_20px_60px_rgba(0,0,0,0.2)]"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="mb-6">
+          <h2 className="font-['Playfair_Display',serif] text-lg font-bold text-[#1a2e35] m-0 mb-1">
+            Edit User
+          </h2>
+          <p className="text-[#6b7280] text-[13px] m-0">{user.full_name || '—'}</p>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {/* Email */}
+          <div>
+            <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              autoComplete="off"
+              className="w-full px-3.5 py-[11px] border-[1.5px] border-[#e5e7eb] rounded-[10px] text-sm text-[#1a2e35] outline-none font-['DM_Sans',sans-serif] focus:border-[#8cc7c4] transition-colors duration-150 box-border"
+            />
+          </div>
+
+          {/* New password */}
+          <div>
+            <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+              New Password
+              <span className="ml-1.5 text-[11px] font-normal text-[#9ca3af]">leave blank to keep current</span>
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="new-password"
+              className="w-full px-3.5 py-[11px] border-[1.5px] border-[#e5e7eb] rounded-[10px] text-sm text-[#1a2e35] outline-none font-['DM_Sans',sans-serif] focus:border-[#8cc7c4] transition-colors duration-150 box-border"
+            />
+          </div>
+
+          {/* Role */}
+          <div>
+            <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">Role</label>
+            <select
+              value={role}
+              onChange={e => setRole(e.target.value as Role)}
+              className="w-full px-3.5 py-[11px] border-[1.5px] border-[#e5e7eb] rounded-[10px] text-sm text-[#1a2e35] outline-none font-['DM_Sans',sans-serif] bg-white box-border cursor-pointer focus:border-[#8cc7c4] transition-colors duration-150"
+            >
+              <option value="admin">Admin</option>
+              <option value="manager">Manager</option>
+              <option value="staff">Staff</option>
+            </select>
+          </div>
+
+          {/* Active toggle */}
+          <div className="flex items-center justify-between py-3 px-4 rounded-[10px] bg-[#f8fafc] border border-[#e5e7eb]">
+            <div>
+              <p className="text-[13px] font-semibold text-[#374151] m-0">Account status</p>
+              <p className="text-[11px] text-[#9ca3af] m-0 mt-0.5">
+                {isActive ? 'User can log in' : 'User cannot log in'}
+              </p>
+            </div>
+            <button
+              onClick={() => setIsActive(a => !a)}
+              className={`relative w-11 h-6 rounded-full border-none cursor-pointer transition-colors duration-200 shrink-0 ${
+                isActive ? 'bg-[#16a34a]' : 'bg-[#d1d5db]'
+              }`}
+            >
+              <span
+                className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow transition-transform duration-200 ${
+                  isActive ? 'translate-x-[22px]' : 'translate-x-[3px]'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* Feedback */}
+        {error && (
+          <div className="mt-4 bg-[#fef2f2] border border-[#fecaca] rounded-lg px-3.5 py-2.5 text-[13px] text-[#dc2626]">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mt-4 bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg px-3.5 py-2.5 text-[13px] text-[#166534]">
+            {success}
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="flex gap-2.5 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 py-[11px] bg-[#f4f6f8] border-none rounded-[10px] text-sm font-semibold text-[#1a2e35] cursor-pointer font-['DM_Sans',sans-serif] hover:bg-[#e9ecef] transition-colors duration-150"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading || !email}
+            className={`flex-1 py-[11px] border-none rounded-[10px] text-sm font-semibold text-white font-['DM_Sans',sans-serif] transition-colors duration-150
+              ${loading || !email
+                ? 'bg-[#a8d5d3] cursor-not-allowed'
+                : 'bg-[#1a2e35] cursor-pointer hover:bg-[#243f49]'
+              }`}
+          >
+            {loading ? 'Saving...' : 'Save changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Add User Modal ────────────────────────────────────────────
 function AddUserModal({ onClose, onAdded }: { onClose: () => void; onAdded: () => void }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -274,9 +390,9 @@ function AddUserModal({ onClose, onAdded }: { onClose: () => void; onAdded: () =
   }
 
   const fields = [
-    { label: 'Full Name', value: fullName, setter: setFullName, type: 'text',     placeholder: 'Jane Smith',        autoComplete: 'off'          },
-    { label: 'Email',     value: email,    setter: setEmail,    type: 'email',    placeholder: 'jane@easyway.com',  autoComplete: 'new-email'    },
-    { label: 'Password',  value: password, setter: setPassword, type: 'password', placeholder: '••••••••',          autoComplete: 'new-password' },
+    { label: 'Full Name', value: fullName, setter: setFullName, type: 'text',     placeholder: 'Jane Smith',       autoComplete: 'off'          },
+    { label: 'Email',     value: email,    setter: setEmail,    type: 'email',    placeholder: 'jane@example.com', autoComplete: 'new-email'    },
+    { label: 'Password',  value: password, setter: setPassword, type: 'password', placeholder: '••••••••',         autoComplete: 'new-password' },
   ]
 
   return (
@@ -292,7 +408,6 @@ function AddUserModal({ onClose, onAdded }: { onClose: () => void; onAdded: () =
           Add New User
         </h2>
 
-        {/* Decoy inputs to trap browser autofill */}
         <input type="text" name="fakeusernameremembered" autoComplete="username" style={{ display: 'none' }} readOnly />
         <input type="password" name="fakepasswordremembered" autoComplete="current-password" style={{ display: 'none' }} readOnly />
 

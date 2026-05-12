@@ -41,3 +41,35 @@ export async function createUser({ email, password, fullName, role }: {
 
   return { success: true }
 }
+
+// in createUser.ts (or a separate updateUser.ts)
+export async function updateUser({
+  userId, email, password, role, isActive,
+}: {
+  userId: string
+  email?: string
+  password?: string
+  role: string
+  isActive: boolean
+}) {
+  const supabase = createAdminClient() // service role client
+
+  // Update auth (email + password)
+  const authUpdate: any = {}
+  if (email) authUpdate.email = email
+  if (password) authUpdate.password = password
+
+  if (Object.keys(authUpdate).length > 0) {
+    const { error } = await supabase.auth.admin.updateUserById(userId, authUpdate)
+    if (error) return { error: error.message }
+  }
+
+  // Update profile (role + is_active)
+  const { error } = await supabase
+    .from('profiles')
+    .update({ role, is_active: isActive })
+    .eq('id', userId)
+
+  if (error) return { error: error.message }
+  return { error: null }
+}

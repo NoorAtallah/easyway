@@ -20,6 +20,7 @@ type PendingChange = Partial<{
   cuft: number
   image_url: string | null
   is_active: boolean
+  sort_order: number
 }>
 
 // ── Image upload cell ─────────────────────────────────────────
@@ -57,7 +58,6 @@ function ImageUpload({
       .getPublicUrl(path)
 
     const bustUrl = `${publicUrl}?t=${Date.now()}`
-    // Image uploads save immediately (they go to storage, not just state)
     await updateMovingItem(item.id, { image_url: bustUrl })
     onUploaded(bustUrl)
     setUploading(false)
@@ -315,8 +315,20 @@ export default function MovingItemsManager({ items: initialItems }: { items: Mov
       ...prev,
       [id]: { ...prev[id], ...change },
     }))
-    // Also update local UI state immediately for responsive feel
     setItems(prev => prev.map(i => i.id === id ? { ...i, ...change } : i))
+  }
+
+  // Swap sort_order between two items within a section
+  const moveItem = (sectionItems: MovingItem[], id: string, direction: 'up' | 'down') => {
+    const sorted = [...sectionItems].sort((a, b) => a.sort_order - b.sort_order)
+    const idx = sorted.findIndex(i => i.id === id)
+    if (idx < 0) return
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= sorted.length) return
+    const a = sorted[idx]
+    const b = sorted[swapIdx]
+    queueChange(a.id, { sort_order: b.sort_order })
+    queueChange(b.id, { sort_order: a.sort_order })
   }
 
   // Flush all pending changes to DB
@@ -340,7 +352,7 @@ export default function MovingItemsManager({ items: initialItems }: { items: Mov
   // Discard all pending changes
   const handleDiscardAll = () => {
     setPendingChanges({})
-    setItems(initialItems) // reset to server state
+    setItems(initialItems)
   }
 
   const toggleSection = (s: string) => {
@@ -352,7 +364,6 @@ export default function MovingItemsManager({ items: initialItems }: { items: Mov
   }
 
   const handleImageUploaded = (id: string, url: string) => {
-    // Image saves immediately, just update UI
     setItems(prev => prev.map(i => i.id === id ? { ...i, image_url: url } : i))
   }
 
@@ -372,7 +383,6 @@ export default function MovingItemsManager({ items: initialItems }: { items: Mov
 
   const handleDelete = (id: string, name: string) => {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
-    // Remove from pending too
     setPendingChanges(prev => {
       const next = { ...prev }
       delete next[id]
@@ -416,6 +426,7 @@ export default function MovingItemsManager({ items: initialItems }: { items: Mov
       <div className="flex flex-col gap-4">
         {sections.map(section => {
           const sectionItems = items.filter(i => i.section === section)
+          const sortedItems = [...sectionItems].sort((a, b) => a.sort_order - b.sort_order)
           const collapsed = collapsedSections.has(section)
           const activeCount = sectionItems.filter(i => i.is_active).length
 
@@ -432,7 +443,6 @@ export default function MovingItemsManager({ items: initialItems }: { items: Mov
                     : <ChevronDown size={16} className="text-[#9aa5b4]" />}
                   <span className="font-['Playfair_Display',serif] font-bold text-[#1a2e35]">{section}</span>
                   <span className="text-xs text-[#9aa5b4]">{activeCount}/{sectionItems.length} active</span>
-                  {/* dirty indicator per section */}
                   {sectionItems.some(i => pendingChanges[i.id]) && (
                     <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
                       unsaved
@@ -451,7 +461,8 @@ export default function MovingItemsManager({ items: initialItems }: { items: Mov
               {!collapsed && (
                 <div className="divide-y divide-[#edf0f4]">
                   {/* Table header */}
-                  <div className="hidden md:grid grid-cols-[52px_1fr_80px_100px_80px] gap-4 px-5 py-2 text-[10px] uppercase tracking-[0.1em] text-[#9aa5b4] font-bold">
+                  <div className="hidden md:grid grid-cols-[40px_52px_1fr_80px_100px_80px] gap-4 px-5 py-2 text-[10px] uppercase tracking-[0.1em] text-[#9aa5b4] font-bold">
+                    <span>Order</span>
                     <span>Image</span>
                     <span>Name</span>
                     <span>Cu.ft</span>
@@ -459,20 +470,35 @@ export default function MovingItemsManager({ items: initialItems }: { items: Mov
                     <span>Actions</span>
                   </div>
 
-                  {sectionItems.length === 0 ? (
+                  {sortedItems.length === 0 ? (
                     <div className="px-5 py-8 text-center text-sm text-[#9aa5b4]">
                       No items yet. Click "Add item" to add one.
                     </div>
                   ) : (
-                    sectionItems.map(item => {
+                    sortedItems.map((item, i) => {
                       const isDirty = !!pendingChanges[item.id]
                       return (
                         <div
                           key={item.id}
-                          className={`grid grid-cols-[52px_1fr] md:grid-cols-[52px_1fr_80px_100px_80px] gap-4 items-center px-5 py-3 transition-colors ${
+                          className={`grid grid-cols-[52px_1fr] md:grid-cols-[40px_52px_1fr_80px_100px_80px] gap-4 items-center px-5 py-3 transition-colors ${
                             !item.is_active ? 'opacity-50' : ''
                           } ${isDirty ? 'bg-amber-50/40' : ''}`}
                         >
+                          {/* Reorder — desktop only */}
+                          <div className="hidden md:flex flex-col gap-0.5 items-center text-[#9aa5b4]">
+                            <button
+                              onClick={() => moveItem(sectionItems, item.id, 'up')}
+                              disabled={i === 0}
+                              className="hover:text-[#8cc7c4] bg-transparent border-none cursor-pointer p-0 leading-none disabled:opacity-30"
+                            >▲</button>
+                            <span className="text-[10px]">{i + 1}</span>
+                            <button
+                              onClick={() => moveItem(sectionItems, item.id, 'down')}
+                              disabled={i === sortedItems.length - 1}
+                              className="hover:text-[#8cc7c4] bg-transparent border-none cursor-pointer p-0 leading-none disabled:opacity-30"
+                            >▼</button>
+                          </div>
+
                           {/* Image */}
                           <ImageUpload item={item} onUploaded={url => handleImageUploaded(item.id, url)} />
 

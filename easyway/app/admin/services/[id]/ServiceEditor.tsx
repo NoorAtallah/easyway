@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  ChevronLeft, Plus, Trash2, GripVertical, ChevronDown,
+  ChevronLeft, Plus, Trash2, ChevronDown,
   ChevronUp, Pencil, Check, X, ToggleLeft, ToggleRight,
 } from 'lucide-react'
 import {
@@ -53,7 +53,10 @@ function InlineEdit({ value, onSave, className = '', type = 'text' }: {
       <input
         autoFocus type={type} value={val}
         onChange={e => setVal(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter') { onSave(val); setEditing(false) } if (e.key === 'Escape') { setVal(value); setEditing(false) } }}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { onSave(val); setEditing(false) }
+          if (e.key === 'Escape') { setVal(value); setEditing(false) }
+        }}
         className="border border-[#8cc7c4] rounded px-2 py-1 text-sm outline-none text-[#1a2e35] bg-white"
       />
       <button onClick={() => { onSave(val); setEditing(false) }} className="p-1 text-green-600 border-none bg-transparent cursor-pointer"><Check size={14} /></button>
@@ -62,10 +65,36 @@ function InlineEdit({ value, onSave, className = '', type = 'text' }: {
   )
 }
 
-function ItemRow({ item, onUpdate, onDelete }: {
+// ── Reorder arrows ────────────────────────────────────────────
+function ReorderButtons({ index, total, onMove }: {
+  index: number
+  total: number
+  onMove: (dir: 'up' | 'down') => void
+}) {
+  return (
+    <div className="flex flex-col gap-0.5 items-center text-[#9aa5b4] shrink-0">
+      <button
+        onClick={() => onMove('up')}
+        disabled={index === 0}
+        className="hover:text-[#8cc7c4] bg-transparent border-none cursor-pointer p-0 leading-none disabled:opacity-30"
+      >▲</button>
+      <span className="text-[10px]">{index + 1}</span>
+      <button
+        onClick={() => onMove('down')}
+        disabled={index === total - 1}
+        className="hover:text-[#8cc7c4] bg-transparent border-none cursor-pointer p-0 leading-none disabled:opacity-30"
+      >▼</button>
+    </div>
+  )
+}
+
+function ItemRow({ item, index, total, onUpdate, onDelete, onMove }: {
   item: Item
+  index: number
+  total: number
   onUpdate: (id: string, data: Partial<Item>) => void
   onDelete: (id: string) => void
+  onMove: (id: string, dir: 'up' | 'down') => void
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -78,7 +107,7 @@ function ItemRow({ item, onUpdate, onDelete }: {
 
   return (
     <div className={`flex items-center gap-3 px-3 py-2.5 border-b border-[#edf0f4] last:border-0 ${!item.is_active ? 'opacity-40' : ''}`}>
-      <GripVertical size={14} className="text-[#dde3ea] shrink-0 cursor-grab" />
+      <ReorderButtons index={index} total={total} onMove={dir => onMove(item.id, dir)} />
       <div className="flex-1 min-w-0 grid grid-cols-[1fr_1fr_80px] gap-3 items-center">
         <InlineEdit
           value={item.label}
@@ -118,17 +147,23 @@ function ItemRow({ item, onUpdate, onDelete }: {
   )
 }
 
-function StepCard({ step, onUpdateStep, onDeleteStep, onAddItem, onUpdateItem, onDeleteItem }: {
+function StepCard({ step, index, total, onUpdateStep, onDeleteStep, onMoveStep, onAddItem, onUpdateItem, onDeleteItem, onMoveItem }: {
   step: Step
+  index: number
+  total: number
   onUpdateStep: (id: string, data: Partial<Step>) => void
   onDeleteStep: (id: string) => void
+  onMoveStep: (id: string, dir: 'up' | 'down') => void
   onAddItem: (stepId: string) => void
   onUpdateItem: (id: string, data: Partial<Item>) => void
   onDeleteItem: (id: string) => void
+  onMoveItem: (stepId: string, itemId: string, dir: 'up' | 'down') => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const [isPending, startTransition] = useTransition()
   const hasItems = ['counter', 'select'].includes(step.type)
+
+  const sortedItems = [...step.cleaning_step_items].sort((a, b) => a.sort_order - b.sort_order)
 
   const saveStep = (field: keyof Step, value: any) => {
     onUpdateStep(step.id, { [field]: value })
@@ -141,7 +176,7 @@ function StepCard({ step, onUpdateStep, onDeleteStep, onAddItem, onUpdateItem, o
     <div className={`bg-white border rounded-lg overflow-hidden ${!step.is_active ? 'opacity-50' : 'border-[#dde3ea]'}`}>
       {/* Step header */}
       <div className="flex items-center gap-3 px-4 py-3 bg-[#fafbfc] border-b border-[#edf0f4]">
-        <GripVertical size={15} className="text-[#dde3ea] cursor-grab shrink-0" />
+        <ReorderButtons index={index} total={total} onMove={dir => onMoveStep(step.id, dir)} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-bold uppercase tracking-[0.5px] px-2 py-[2px] rounded-full bg-[#8cc7c4]/20 text-[#1a2e35] border border-[#8cc7c4]/30 shrink-0">
@@ -190,21 +225,23 @@ function StepCard({ step, onUpdateStep, onDeleteStep, onAddItem, onUpdateItem, o
       {/* Items */}
       {hasItems && expanded && (
         <div>
-          {/* Column headers */}
-          <div className="grid grid-cols-[auto_1fr_1fr_80px_60px] gap-3 px-3 py-1.5 bg-[#f9fafb] border-b border-[#edf0f4]">
-            <div className="w-[14px]" />
+          <div className="grid grid-cols-[32px_1fr_1fr_80px_60px] gap-3 px-3 py-1.5 bg-[#f9fafb] border-b border-[#edf0f4]">
+            <div />
             <span className="text-[10px] uppercase tracking-[0.1em] text-[#9aa5b4] font-bold">Label</span>
             <span className="text-[10px] uppercase tracking-[0.1em] text-[#9aa5b4] font-bold">Description</span>
             <span className="text-[10px] uppercase tracking-[0.1em] text-[#9aa5b4] font-bold">Price</span>
             <div />
           </div>
 
-          {step.cleaning_step_items.map(item => (
+          {sortedItems.map((item, i) => (
             <ItemRow
               key={item.id}
               item={item}
+              index={i}
+              total={sortedItems.length}
               onUpdate={onUpdateItem}
               onDelete={onDeleteItem}
+              onMove={(itemId, dir) => onMoveItem(step.id, itemId, dir)}
             />
           ))}
 
@@ -229,6 +266,8 @@ export default function ServiceEditor({ service: initial }: { service: Service }
   const [newStepType, setNewStepType] = useState('counter')
   const [newStepTitle, setNewStepTitle] = useState('')
 
+  const sortedSteps = [...steps].sort((a, b) => a.sort_order - b.sort_order)
+
   const saveService = (field: keyof Service, value: any) => {
     setService(p => ({ ...p, [field]: value }))
     startTransition(async () => {
@@ -244,6 +283,26 @@ export default function ServiceEditor({ service: initial }: { service: Service }
     if (!confirm('Delete this step and all its items?')) return
     setSteps(prev => prev.filter(s => s.id !== id))
     startTransition(async () => { await deleteStep(id) })
+  }
+
+  // Swap sort_order between two steps
+  const handleMoveStep = (id: string, dir: 'up' | 'down') => {
+    const idx = sortedSteps.findIndex(s => s.id === id)
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= sortedSteps.length) return
+    const a = sortedSteps[idx]
+    const b = sortedSteps[swapIdx]
+    setSteps(prev => prev.map(s => {
+      if (s.id === a.id) return { ...s, sort_order: b.sort_order }
+      if (s.id === b.id) return { ...s, sort_order: a.sort_order }
+      return s
+    }))
+    startTransition(async () => {
+      await Promise.all([
+        updateStep(a.id, { sort_order: b.sort_order } as any),
+        updateStep(b.id, { sort_order: a.sort_order } as any),
+      ])
+    })
   }
 
   const handleAddStep = () => {
@@ -287,6 +346,35 @@ export default function ServiceEditor({ service: initial }: { service: Service }
       cleaning_step_items: s.cleaning_step_items.filter(i => i.id !== id),
     })))
     startTransition(async () => { await deleteItem(id) })
+  }
+
+  // Swap sort_order between two items within a step
+  const handleMoveItem = (stepId: string, itemId: string, dir: 'up' | 'down') => {
+    const step = steps.find(s => s.id === stepId)
+    if (!step) return
+    const sorted = [...step.cleaning_step_items].sort((a, b) => a.sort_order - b.sort_order)
+    const idx = sorted.findIndex(i => i.id === itemId)
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= sorted.length) return
+    const a = sorted[idx]
+    const b = sorted[swapIdx]
+    setSteps(prev => prev.map(s => {
+      if (s.id !== stepId) return s
+      return {
+        ...s,
+        cleaning_step_items: s.cleaning_step_items.map(i => {
+          if (i.id === a.id) return { ...i, sort_order: b.sort_order }
+          if (i.id === b.id) return { ...i, sort_order: a.sort_order }
+          return i
+        }),
+      }
+    }))
+    startTransition(async () => {
+      await Promise.all([
+        updateItem(a.id, { sort_order: b.sort_order }),
+        updateItem(b.id, { sort_order: a.sort_order }),
+      ])
+    })
   }
 
   return (
@@ -374,15 +462,19 @@ export default function ServiceEditor({ service: initial }: { service: Service }
       </div>
 
       <div className="flex flex-col gap-3">
-        {steps.map(step => (
+        {sortedSteps.map((step, i) => (
           <StepCard
             key={step.id}
             step={step}
+            index={i}
+            total={sortedSteps.length}
             onUpdateStep={handleUpdateStep}
             onDeleteStep={handleDeleteStep}
+            onMoveStep={handleMoveStep}
             onAddItem={handleAddItem}
             onUpdateItem={handleUpdateItem}
             onDeleteItem={handleDeleteItem}
+            onMoveItem={handleMoveItem}
           />
         ))}
       </div>
