@@ -130,13 +130,8 @@ function ZipInputField({
 
 // ── Room stepper section ──────────────────────────────────────
 function RoomStep({
-  section,
-  stepNumber,
-  totalSteps,
-  counts,
-  onInc,
-  onDec,
-  isCompleted,
+  section, stepNumber, totalSteps, counts, onInc, onDec, isCompleted,
+  isOpen, onOpen, onDone,
 }: {
   section: { name: string; items: MovingItem[] }
   stepNumber: number
@@ -145,8 +140,10 @@ function RoomStep({
   onInc: (id: string) => void
   onDec: (id: string) => void
   isCompleted: boolean
+  isOpen: boolean
+  onOpen: () => void
+  onDone: () => void
 }) {
-  const [open, setOpen] = useState(stepNumber === 1) // first room open by default
   const sectionCount = section.items.reduce((a, item) => a + (counts[item.id] || 0), 0)
   const sectionCuft = section.items.reduce((a, item) => a + (counts[item.id] || 0) * item.cuft, 0)
   const isLast = stepNumber === totalSteps
@@ -155,31 +152,20 @@ function RoomStep({
     <div className="relative flex gap-4">
       {/* Vertical spine */}
       <div className="flex flex-col items-center shrink-0">
-        {/* Circle */}
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 z-10 transition-colors duration-200"
           style={{
-            background: isCompleted
-              ? 'var(--ew-leaf)'
-              : open
-              ? 'var(--ew-sky)'
-              : 'rgba(51,63,54,0.1)',
-            color: isCompleted || open ? '#fff' : '#9aa5b4',
-            border: open && !isCompleted ? '2px solid var(--ew-sky)' : '2px solid transparent',
+            background: isCompleted ? 'var(--ew-leaf)' : isOpen ? 'var(--ew-sky)' : 'rgba(51,63,54,0.1)',
+            color: isCompleted || isOpen ? '#fff' : '#9aa5b4',
+            border: isOpen && !isCompleted ? '2px solid var(--ew-sky)' : '2px solid transparent',
           }}
         >
           {isCompleted ? <CheckCircle size={14} /> : stepNumber}
         </div>
-        {/* Line down */}
         {!isLast && (
           <div
             className="w-px flex-1 mt-1"
-            style={{
-              background: isCompleted
-                ? 'var(--ew-leaf)'
-                : 'rgba(51,63,54,0.1)',
-              minHeight: '24px',
-            }}
+            style={{ background: isCompleted ? 'var(--ew-leaf)' : 'rgba(51,63,54,0.1)', minHeight: '24px' }}
           />
         )}
       </div>
@@ -188,81 +174,53 @@ function RoomStep({
       <div
         className="flex-1 mb-4 rounded-xl overflow-hidden transition-[border-color] duration-200"
         style={{
-          border: open
-            ? '1.5px solid var(--ew-sky)'
-            : isCompleted
-            ? '1.5px solid var(--ew-leaf)'
-            : '1px solid rgba(51,63,54,0.12)',
+          border: isOpen ? '1.5px solid var(--ew-sky)' : isCompleted ? '1.5px solid var(--ew-leaf)' : '1px solid rgba(51,63,54,0.12)',
           background: 'var(--ew-bg)',
         }}
       >
-        {/* Header — always visible */}
+        {/* Header */}
         <button
-          onClick={() => setOpen(o => !o)}
+          onClick={onOpen}
           className="w-full flex items-center justify-between px-5 py-4 bg-transparent border-none cursor-pointer text-left"
-          style={{ background: open ? 'rgba(27,110,180,0.04)' : 'transparent' }}
+          style={{ background: isOpen ? 'rgba(27,110,180,0.04)' : 'transparent' }}
         >
           <div className="flex items-center gap-3">
             <div>
-              <p className="m-0 text-[13px] font-bold" style={{ color: 'var(--ew-forest)' }}>
-                {section.name}
-              </p>
+              <p className="m-0 text-[13px] font-bold" style={{ color: 'var(--ew-forest)' }}>{section.name}</p>
               {sectionCount > 0 && (
                 <p className="m-0 text-[11px] mt-0.5" style={{ color: 'var(--ew-sky)' }}>
                   {sectionCount} item{sectionCount !== 1 ? 's' : ''} · {sectionCuft} cu.ft
                 </p>
               )}
-              {sectionCount === 0 && !open && (
-                <p className="m-0 text-[11px] mt-0.5" style={{ color: '#9aa5b4' }}>
-                  No items added
-                </p>
+              {sectionCount === 0 && !isOpen && (
+                <p className="m-0 text-[11px] mt-0.5" style={{ color: '#9aa5b4' }}>No items added</p>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {sectionCount > 0 && (
-              <span
-                className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                style={{ background: 'rgba(27,110,180,0.1)', color: 'var(--ew-sky)' }}
-              >
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(27,110,180,0.1)', color: 'var(--ew-sky)' }}>
                 {sectionCount}
               </span>
             )}
-            {open ? (
-              <ChevronUp size={16} style={{ color: '#9aa5b4' }} />
-            ) : (
-              <ChevronDown size={16} style={{ color: '#9aa5b4' }} />
-            )}
+            {isOpen ? <ChevronUp size={16} style={{ color: '#9aa5b4' }} /> : <ChevronDown size={16} style={{ color: '#9aa5b4' }} />}
           </div>
         </button>
 
         {/* Items grid */}
-        {open && (
-          <div
-            className="px-5 pb-5"
-            style={{ borderTop: '1px solid rgba(51,63,54,0.08)' }}
-          >
+        {isOpen && (
+          <div className="px-5 pb-5" style={{ borderTop: '1px solid rgba(51,63,54,0.08)' }}>
             <p className="text-[11px] uppercase tracking-[0.1em] font-semibold mt-4 mb-3" style={{ color: '#9aa5b4' }}>
               Select items from this room
             </p>
-            <div
-              className="grid gap-3"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}
-            >
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
               {section.items.map(item => (
-                <ItemCard
-                  key={item.id}
-                  item={item}
-                  count={counts[item.id] || 0}
-                  onInc={() => onInc(item.id)}
-                  onDec={() => onDec(item.id)}
-                />
+                <ItemCard key={item.id} item={item} count={counts[item.id] || 0} onInc={() => onInc(item.id)} onDec={() => onDec(item.id)} />
               ))}
             </div>
 
-            {/* Done button — collapses the room */}
             <button
-              onClick={() => setOpen(false)}
+              onClick={onDone}
               className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer border-none transition-colors duration-150"
               style={{ background: 'rgba(51,63,54,0.06)', color: 'var(--ew-forest)' }}
               onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(51,63,54,0.12)')}
@@ -305,6 +263,7 @@ export default function MovingQuotePage({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [referenceId, setReferenceId] = useState<string | null>(null)
+  const [activeSection, setActiveSection] = useState(0)
 
   const handleZipChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>, which: 'pickup' | 'dropoff') => {
@@ -346,11 +305,13 @@ export default function MovingQuotePage({
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
-
+const isZipReady = (field: ZipField, value: string) =>
+  field.status === 'ok' || (isValidZip(value) && field.status === 'error')
   const canProceed =
-    pickupZip.status === 'ok' && dropoffZip.status === 'ok' &&
-    form.firstName.trim() && form.lastName.trim() &&
-    form.email.trim() && form.phone.trim() && form.needVehicle
+  isZipReady(pickupZip, form.pickupZip) &&
+  isZipReady(dropoffZip, form.dropoffZip) &&
+  form.firstName.trim() && form.lastName.trim() &&
+  form.email.trim() && form.phone.trim() && form.needVehicle
 
   const inc = (key: string) => setCounts(c => ({ ...c, [key]: (c[key] || 0) + 1 }))
   const dec = (key: string) => setCounts(c => ({ ...c, [key]: Math.max(0, (c[key] || 0) - 1) }))
@@ -369,22 +330,21 @@ export default function MovingQuotePage({
     : null
 
   const handleSubmit = async () => {
-    if (!pickupZip.info || !dropoffZip.info) return
-    setSubmitting(true)
-    setSubmitError(null)
-    const result = await submitMovingQuote({
-      firstName: form.firstName, lastName: form.lastName,
-      email: form.email, phone: form.phone,
-      pickupZip: form.pickupZip, pickupCity: pickupZip.info.city, pickupState: pickupZip.info.state,
-      dropoffZip: form.dropoffZip, dropoffCity: dropoffZip.info.city, dropoffState: dropoffZip.info.state,
-      distanceMiles: distanceMiles ?? 0, preferredDate: form.date,
-      needVehicle: form.needVehicle === 'yes', items: counts, totalCuft,
-    })
-    setSubmitting(false)
-    if (!result.success) { setSubmitError(result.error); return }
-    setReferenceId(result.referenceId)
-    setSubmitted(true)
-  }
+  setSubmitting(true)
+  setSubmitError(null)
+  const result = await submitMovingQuote({
+    firstName: form.firstName, lastName: form.lastName,
+    email: form.email, phone: form.phone,
+    pickupZip: form.pickupZip, pickupCity: pickupZip.info?.city ?? '', pickupState: pickupZip.info?.state ?? '',
+    dropoffZip: form.dropoffZip, dropoffCity: dropoffZip.info?.city ?? '', dropoffState: dropoffZip.info?.state ?? '',
+    distanceMiles: distanceMiles ?? 0, preferredDate: form.date,
+    needVehicle: form.needVehicle === 'yes', items: counts, totalCuft,
+  })
+  setSubmitting(false)
+  if (!result.success) { setSubmitError(result.error); return }
+  setReferenceId(result.referenceId)
+  setSubmitted(true)
+}
 
   const handleReset = () => {
     setSubmitted(false); setStep(1)
@@ -696,20 +656,23 @@ export default function MovingQuotePage({
             ) : (
               <div>
                 {sections.map((section, i) => {
-                  const sectionCount = section.items.reduce((a, item) => a + (counts[item.id] || 0), 0)
-                  return (
-                    <RoomStep
-                      key={section.name}
-                      section={section}
-                      stepNumber={i + 1}
-                      totalSteps={sections.length}
-                      counts={counts}
-                      onInc={inc}
-                      onDec={dec}
-                      isCompleted={sectionCount > 0}
-                    />
-                  )
-                })}
+  const sectionCount = section.items.reduce((a, item) => a + (counts[item.id] || 0), 0)
+  return (
+    <RoomStep
+      key={section.name}
+      section={section}
+      stepNumber={i + 1}
+      totalSteps={sections.length}
+      counts={counts}
+      onInc={inc}
+      onDec={dec}
+      isCompleted={sectionCount > 0}
+      isOpen={activeSection === i}
+      onOpen={() => setActiveSection(i)}
+      onDone={() => setActiveSection(i + 1)} // advances to next, or past last = none open
+    />
+  )
+})}
               </div>
             )}
 

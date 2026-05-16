@@ -54,7 +54,7 @@ export default function Navbar() {
 
         {/* Logo */}
         <Link href="/" className="no-underline flex items-center">
-          <img src="/11.png" alt="EasyWay" className="h-12 w-auto object-contain" />
+          <img src="/12.png" alt="EasyWay" className="h-12 w-auto object-contain" />
         </Link>
 
         {/* Desktop nav */}

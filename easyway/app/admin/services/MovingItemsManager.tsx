@@ -485,19 +485,20 @@ export default function MovingItemsManager({ items: initialItems }: { items: Mov
                           } ${isDirty ? 'bg-amber-50/40' : ''}`}
                         >
                           {/* Reorder — desktop only */}
-                          <div className="hidden md:flex flex-col gap-0.5 items-center text-[#9aa5b4]">
-                            <button
-                              onClick={() => moveItem(sectionItems, item.id, 'up')}
-                              disabled={i === 0}
-                              className="hover:text-[#8cc7c4] bg-transparent border-none cursor-pointer p-0 leading-none disabled:opacity-30"
-                            >▲</button>
-                            <span className="text-[10px]">{i + 1}</span>
-                            <button
-                              onClick={() => moveItem(sectionItems, item.id, 'down')}
-                              disabled={i === sortedItems.length - 1}
-                              className="hover:text-[#8cc7c4] bg-transparent border-none cursor-pointer p-0 leading-none disabled:opacity-30"
-                            >▼</button>
-                          </div>
+                          {/* Reorder — desktop only */}
+<div className="hidden md:flex items-center justify-center">
+  <input
+    type="number"
+    min={1}
+    value={item.sort_order}
+    onChange={e => {
+      const val = Number(e.target.value)
+      if (isNaN(val) || val < 1) return
+      queueChange(item.id, { sort_order: val })
+    }}
+    className="w-10 text-center text-sm text-[#1a2e35] border border-[#dde3ea] rounded px-1 py-1 outline-none focus:border-[#8cc7c4] bg-white"
+  />
+</div>
 
                           {/* Image */}
                           <ImageUpload item={item} onUploaded={url => handleImageUploaded(item.id, url)} />
