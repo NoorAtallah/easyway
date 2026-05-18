@@ -20,8 +20,8 @@ export const metadata: Metadata = {
   description: 'Professional home services — moving, landscaping, cleaning, and more.',
   icons: {
     icon: '/12.png',
-    shortcut: '/icon.png',
-    apple: '/apple-icon.png',
+    shortcut: '/12.png',
+    apple: '/12.png',
   },
 }
 
