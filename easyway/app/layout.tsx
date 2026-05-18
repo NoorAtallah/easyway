@@ -18,6 +18,11 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: 'EasyWay Home Services',
   description: 'Professional home services — moving, landscaping, cleaning, and more.',
+  icons: {
+    icon: '/12.png',
+    shortcut: '/icon.png',
+    apple: '/apple-icon.png',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
