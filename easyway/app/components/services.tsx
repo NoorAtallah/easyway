@@ -10,7 +10,7 @@ const SERVICES = [
     name: "Moving Services",
     desc: "Pick your items room by room and get an instant quote based on ZIP code distance and volume.",
     href: "/moving",
-    img: "./1.png",
+    img: "./1.jpeg",
   },
   {
     num: "02",
@@ -18,7 +18,7 @@ const SERVICES = [
     name: "Landscaping",
     desc: "Transform your outdoor spaces with expert planting, design, and ongoing yard maintenance.",
     href: "/landscaping",
-    img: "./2.png",
+    img: "./2.jpeg",
   },
   {
     num: "03",
@@ -26,7 +26,7 @@ const SERVICES = [
     name: "Cleaning Services",
     desc: "Deep cleans, recurring plans, and move-in/out packages tailored to your lifestyle.",
     href: "/cleaning",
-    img: "./3.png",
+    img: "./3.jpeg",
   },
   {
     num: "04",
@@ -34,7 +34,7 @@ const SERVICES = [
     name: "Pool Maintenance",
     desc: "Year-round pool care subscriptions keeping your water safe, clean, and crystal clear.",
     href: "/pool",
-    img: "./4.png",
+    img: "./4.jpeg",
   },
 ];
 
