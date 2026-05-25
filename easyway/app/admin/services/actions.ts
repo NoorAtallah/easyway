@@ -84,6 +84,7 @@ export async function updateService(id: string, data: {
 
   if (error) return { success: false, error: error.message }
   revalidatePath('/admin/services')
+  revalidatePath('/cleaning')   // ← add this line
   return { success: true }
 }
 

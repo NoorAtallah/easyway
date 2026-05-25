@@ -11,7 +11,7 @@ const SLIDES = [
     desc: "Room-by-room planning, instant quotes, and a crew that cares.",
     cta: "Plan Your Move",
     href: "/moving",
-    img: "/1.png",
+    img: "/1.jpeg",
     position: "tl",
   },
   {
@@ -22,7 +22,7 @@ const SLIDES = [
     desc: "From lawn care to full garden design — lasting beauty outdoors.",
     cta: "Get a Free Quote",
     href: "/landscaping",
-    img: "/2.png",
+    img: "/2.jpeg",
     position: "tr",
   },
   {
@@ -33,7 +33,7 @@ const SLIDES = [
     desc: "Deep cleans and recurring schedules tailored to how you live.",
     cta: "Book a Clean",
     href: "/cleaning",
-    img: "/3.png",
+    img: "/3.jpeg",
     position: "bl",
   },
   {
@@ -44,7 +44,7 @@ const SLIDES = [
     desc: "Weekly care and balancing that keeps your pool flawless year-round.",
     cta: "Start a Plan",
     href: "/pool",
-    img: "/4.png",
+    img: "/4.jpeg",
     position: "br",
   },
 ];

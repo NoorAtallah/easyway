@@ -167,7 +167,8 @@ export default function ServicesGrid({ services: initial }: { services: Service[
   const handleToggleActive = (id: string, current: boolean) => {
     setServices(prev => prev.map(s => s.id === id ? { ...s, is_active: !current } : s))
     startTransition(async () => {
-      await updateService(id, { is_active: !current })
+  await updateService(id, { is_active: !current })
+  router.refresh()  // add this
     })
   }
 
