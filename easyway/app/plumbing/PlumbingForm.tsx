@@ -44,7 +44,7 @@ export default function PlumbingForm({ fields }: { fields: PlumbingField[] }) {
         style={{ background: 'var(--ew-forest)', borderBottom: '3px solid var(--ew-sky)' }}
       >
         <div className="mb-6">
-          <img src="/12.png" alt="Plumbing services logo" className="h-10 w-auto" />
+          <img src="/14.png" alt="Plumbing services logo" className="h-10 w-auto" />
         </div>
         <p className="text-[11px] tracking-[0.2em] uppercase font-semibold mb-3.5" style={{ color: 'var(--ew-leaf)' }}>
           Plumbing Services

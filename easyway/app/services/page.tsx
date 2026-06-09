@@ -95,7 +95,7 @@ const SERVICES = [
     name: "Plumbing",
     tagline: "Fixed fast. Done right.",
     desc: "Leaks, clogs, installations, and emergencies — our licensed plumbers respond quickly and get it right the first time. No guesswork, no upsells, just honest work.",
-    img: "./5.jpeg",
+    img: "./20.jpeg",
     href: "/plumbing",
     features: [
       "Emergency same-day response",
