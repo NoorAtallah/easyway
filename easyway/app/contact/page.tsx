@@ -25,7 +25,7 @@ const CONTACT_ITEMS = [
     label: "Email Us",
     value: "hello@easyway.com",
     sub: "We reply within a few hours.",
-    href: "mailto:hello@easyway.com",
+    href: "info@easyway4services.com",
     cta: "Send Email",
   },
 ];
@@ -139,7 +139,7 @@ export default function ContactPage() {
         {/* Right — map */}
         <div className="relative h-[360px] lg:h-auto min-h-[420px]" style={{ background: "var(--ew-bg)" }}>
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2974.4!2d-87.6565!3d41.8093!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x880e318b2a4a0a0f%3A0x1a2b3c4d5e6f7a8b!2sChicago%2C%20IL!5e0!3m2!1sen!2sus!4v1"
+            src="https://maps.google.com/maps?q=30+North+Gould+Street,+Sheridan,+WY+82801&output=embed"
             width="100%"
             height="100%"
             style={{ border: 0, filter: "grayscale(30%) contrast(1.05)" }}
