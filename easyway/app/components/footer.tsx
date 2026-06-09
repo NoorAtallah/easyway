@@ -11,16 +11,17 @@ const LINKS = [
 export default function Footer() {
   return (
     <footer
-      className="p-[52px] flex items-center justify-between flex-wrap gap-6 border-t"
+      className="px-[52px] py-10 flex items-center justify-between flex-wrap gap-6 border-t"
       style={{
-        backgroundColor: "#1a2e35",
-        borderColor: "rgba(255,246,246,0.06)",
+        background: "var(--ew-forest)",
+        borderColor: "rgba(255,255,255,0.08)",
       }}
     >
       {/* Logo */}
-      <div className="font-['Playfair_Display',serif] text-[1.3rem] font-black text-[#FFF6F6]">
-        Easy<span className="text-[#8CC7C4]">Way</span>
-      </div>
+      <Link href="/" className="no-underline flex items-center gap-3">
+        <img src="/12.png" alt="EasyWay" className="h-8 w-auto object-contain" />
+      
+      </Link>
 
       {/* Links */}
       <div className="flex gap-7 flex-wrap">
@@ -28,8 +29,8 @@ export default function Footer() {
           <Link
             key={l.label}
             href={l.href}
-            className="font-['DM_Sans',sans-serif] text-[0.72rem] tracking-[0.1em] uppercase no-underline transition-colors duration-300 hover:text-[#8CC7C4]"
-            style={{ color: "rgba(255,246,246,0.35)" }}
+            className="font-['DM_Sans',sans-serif] text-[0.72rem] tracking-[0.1em] uppercase no-underline transition-colors duration-300 hover:text-white"
+            style={{ color: "rgba(255,255,255,0.4)" }}
           >
             {l.label}
           </Link>
@@ -39,7 +40,7 @@ export default function Footer() {
       {/* Copyright */}
       <div
         className="font-['DM_Sans',sans-serif] text-[0.7rem] tracking-[0.06em]"
-        style={{ color: "rgba(255,246,246,0.25)" }}
+        style={{ color: "rgba(255,255,255,0.25)" }}
       >
         &copy; {new Date().getFullYear()} EasyWay Inc. All rights reserved.
       </div>
