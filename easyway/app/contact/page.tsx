@@ -23,7 +23,7 @@ const CONTACT_ITEMS = [
   {
     icon: <Mail size={20} />,
     label: "Email Us",
-    value: "hello@easyway.com",
+    value: "info@easyway4services.com",
     sub: "We reply within a few hours.",
     href: "info@easyway4services.com",
     cta: "Send Email",
