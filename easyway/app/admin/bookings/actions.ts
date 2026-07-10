@@ -198,7 +198,7 @@ export async function sendBookingEmail(payload: SendEmailPayload) {
  
     const companyName    = settings.company_name    ?? 'EasyWay'
     const companyTagline = settings.company_tagline ?? 'Home Services'
-    const fromEmail      = settings.from_email      ?? 'onboarding@resend.dev'
+    const fromEmail      = settings.from_email      ?? 'info@easyway4services.com'
     const subjectTemplate = settings.email_subject  ?? 'Your {company} booking is confirmed — Ref #{ref}'
     const footerMessage  = settings.footer_message  ?? 'Questions? Reply to this email or call us directly.'
     const headerImageUrl = settings.header_image_url ?? null
